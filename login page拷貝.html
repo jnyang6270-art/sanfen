@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="theme-color" content="#0d172e">
+  <title>三分 — 你的解籤日記</title>
+
+  <!-- Google Fonts for Chinese Display Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&family=Ma+Shan+Zheng&family=Noto+Sans+TC:wght@700;900&family=Noto+Serif+TC:wght@700;900&family=ZCOOL+QingKe+HuangYou&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+
+  <!-- Three.js + GLTFLoader (Modern ES Modules & Import Map for r160) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    @font-face {
+      font-family: 'Suisse Fallback';
+      src: local('Inter Medium'), local('Inter-Medium');
+      font-weight: 500;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Suisse Fallback';
+      src: local('Inter SemiBold'), local('Inter-SemiBold');
+      font-weight: 600;
+      font-display: swap;
+    }
+
+    :root {
+      --desktop-scale: 1;
+      --header-scale: 1;
+      --brand-edge-margin: 45px;
+      --social-edge-margin: 38.6204px;
+      --design-width: 1726;
+      --design-height: 1195;
+      --tablet-layout: 0;
+      --mobile-layout: 0;
+      --hero-background-crop: 0.115;
+      --final-background-crop: 0.303;
+      --sky-blue: #0d172e;
+      --section-cookie-radius: 266px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 320vh;
+      background: #0d172e;
+      color: #ffffff;
+      font-family: 'Suisse Fallback', 'Inter', Arial, sans-serif;
+      overflow-x: hidden;
+      overscroll-behavior: none;
+      scrollbar-width: none;
+    }
+
+    /* Scrolling is locked while the loading placeholder is up — the user
+       can't skip past it until it's actually done. */
+    html.scroll-locked, html.scroll-locked body {
+      overflow: hidden !important;
+      height: 100%;
+    }
+
+    html::-webkit-scrollbar, body::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    .experience {
+      position: relative;
+      width: 100%;
+      height: 320vh;
+      pointer-events: none;
+    }
+
+    /* Fixed Viewport Container */
+    .viewport {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      pointer-events: auto;
+    }
+
+    /* Background Scene */
+    .scene {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .scene .landscape {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 105vw;
+      height: auto;
+      min-height: 140vh;
+      transform: translate3d(-50%, 0, 0);
+      object-fit: cover;
+      will-change: transform;
+      pointer-events: none;
+      transition: filter 0.5s ease;
+    }
+
+    @media (max-width: 1060px) and (max-aspect-ratio: 49/64) {
+      .scene .landscape {
+        height: 145dvh;
+        width: auto;
+        min-width: 105vw;
+        object-fit: cover;
+      }
+    }
+
+    .scene-vignette {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(6, 40, 52, 0.035), transparent 32%, rgba(18, 25, 9, 0.025));
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Ambient dynamic glow overlay */
+    .ambient-glow {
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      width: 600px;
+      height: 600px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(74, 129, 146, 0) 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 2;
+      animation: pulseGlow 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.5; }
+      100% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.9; }
+    }
+
+    /* Stage Canvas System (1726 x 1195) */
+    .stage {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1726px;
+      height: 1195px;
+      transform: translate(-50%, -50%) scale(var(--desktop-scale));
+      transform-origin: center center;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 300ms ease-out;
+      pointer-events: none;
+    }
+
+    .stage.is-ready {
+      opacity: 1;
+    }
+
+    #cookie-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* Soft halo that tracks the moon and brightens as it becomes full */
+    .moon-glow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 246, 225, 0.9) 0%, rgba(255, 225, 170, 0.35) 35%, rgba(255, 200, 140, 0) 70%);
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+
+    /* Loading placeholder: real-footage moon loop (dark->light, black bg
+       screen-blended away against the scene) shown only until the actual
+       3D model finishes loading, then faded out and discarded. */
+    .moon-loading-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 3;
+      object-fit: cover;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 900ms ease;
+    }
+
+    .moon-loading-video.is-visible {
+      opacity: 1;
+    }
+
+    .load-status-text {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-family: 'Noto Serif TC', 'Songti TC', serif;
+      font-size: 16px;
+      letter-spacing: 0.08em;
+      color: rgba(255, 244, 214, 0.85);
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85), 0 0 22px rgba(255, 210, 140, 0.35);
+      z-index: 5;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 900ms ease;
+    }
+
+    .load-status-text.is-visible {
+      opacity: 1;
+    }
+
+    @media (max-width: 620px) {
+      .load-status-text {
+        font-size: 13px;
+      }
+    }
+
+    /* Header Nav */
+    .scene-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 0;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 300ms ease-out;
+      pointer-events: auto;
+    }
+
+    .scene-nav.is-ready {
+      opacity: 1;
+    }
+
+    /* Titles */
+    .title-container {
+      position: absolute;
+      white-space: nowrap;
+      perspective: 800px;
+      pointer-events: none;
+    }
+
+    .brand-text {
+      position: absolute;
+      top: 36px;
+      left: var(--brand-edge-margin);
+      font-family: 'Noto Serif TC', 'Songti TC', serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.35em;
+      color: rgba(255, 255, 255, 0.92);
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+      transform: scale(var(--header-scale));
+      transform-origin: top left;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .hero-title {
+      top: 130px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1480px;
+      height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      z-index: 4;
+    }
+
+    .hero-glyph {
+      display: block;
+      width: auto;
+      filter: drop-shadow(0 20px 70px rgba(0, 0, 0, 0.8)) drop-shadow(0 4px 16px rgba(0, 0, 0, 0.6));
+    }
+
+    .hero-glyph-san { height: 248px; }
+    .hero-glyph-fen { height: 280px; }
+
+    .diff-title {
+      top: 1020px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 140px;
+      font-family: 'Noto Serif TC', 'Songti TC', 'STSong', 'SimSun', serif;
+      font-weight: 900;
+      font-size: 118px;
+      line-height: 0.95;
+      letter-spacing: 0.06em;
+      text-indent: 0.06em;
+      text-align: center;
+      z-index: 4;
+      /* Only this title (once it has scrolled into view) is the entry
+         point into the 三分 app — everything else on the splash stays
+         pointer-events:none so it doesn't intercept scroll/drag. */
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    /* Fade-to-black transition played just before handing off to
+       三分拷貝.html, so the navigation doesn't feel like a hard cut. */
+    .page-exit-veil {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 999;
+      transition: opacity 600ms ease;
+    }
+
+    .page-exit-veil.is-active {
+      opacity: 1;
+    }
+
+    #sanfen-frame {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      border: 0;
+      z-index: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 500ms ease;
+    }
+
+    #sanfen-frame.is-active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Metallic gold fill matching the san-gold.png / fen-gold.png artwork */
+    .diff-title .split-char {
+      background: linear-gradient(180deg, #fff3c4 0%, #ffd77a 15%, #e8a63d 35%, #b97926 55%, #8a5a1e 75%, #c98f34 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      /* Idle breathing glow — this title doubles as the click-to-enter
+         button, so it needs to visibly invite the tap on its own,
+         without relying on a hover state (most visitors are on touch). */
+      animation: diffTitleGlow 2.6s ease-in-out infinite;
+    }
+
+    @keyframes diffTitleGlow {
+      0%, 100% {
+        filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.75)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6))
+                drop-shadow(0 0 14px rgba(255, 214, 140, 0.55)) drop-shadow(0 0 28px rgba(255, 180, 90, 0.3));
+      }
+      50% {
+        filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.75)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6))
+                drop-shadow(0 0 26px rgba(255, 224, 170, 0.9)) drop-shadow(0 0 48px rgba(255, 190, 110, 0.55));
+      }
+    }
+
+    /* Click feedback: a quick, stronger flare right before the page hands
+       off to 三分拷貝.html, so the tap reads as "confirmed" rather than
+       the screen just fading on its own. */
+    .diff-title.is-burst .split-char {
+      animation: diffTitleBurst 550ms ease-out forwards;
+    }
+
+    @keyframes diffTitleBurst {
+      0% {
+        filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.75)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6))
+                drop-shadow(0 0 26px rgba(255, 224, 170, 0.9)) drop-shadow(0 0 48px rgba(255, 190, 110, 0.55));
+      }
+      100% {
+        filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.75)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6))
+                drop-shadow(0 0 60px rgba(255, 240, 200, 1)) drop-shadow(0 0 100px rgba(255, 205, 130, 0.95))
+                drop-shadow(0 0 150px rgba(255, 180, 90, 0.7));
+      }
+    }
+
+    .split-char {
+      display: inline-block;
+      transform-origin: 50% 70%;
+      will-change: transform, opacity;
+      transition: color 0.3s ease;
+    }
+
+    /* Responsive Media Queries */
+    @media (max-width: 1060px) {
+      :root {
+        --tablet-layout: 1;
+      }
+      .hero-title {
+        font-size: 240px;
+        top: 120px;
+        left: 50% !important;
+        transform: translateX(-50%);
+        width: 1200px;
+        letter-spacing: 0.05em;
+        text-indent: 0.05em;
+      }
+    }
+
+    @media (max-width: 620px) {
+      :root {
+        --mobile-layout: 1;
+      }
+      .brand-text {
+        top: 22px;
+        left: 20px;
+        font-size: 13px;
+        letter-spacing: 0.25em;
+      }
+      .hero-title {
+        left: 50% !important;
+        transform: translateX(-50%);
+        width: 100vw !important;
+        font-size: 110px !important;
+        letter-spacing: 0.05em !important;
+        text-indent: 0.05em !important;
+      }
+      /* .hero-glyph-san/-fen are fixed-px heights (248px/280px) sized for
+         desktop — never overridden here before, so on narrow phones the
+         images' natural aspect-ratio width (~683px combined) blew way past
+         the viewport and got clipped by .viewport's overflow:hidden. Scale
+         with viewport width instead so they actually fit. */
+      .hero-glyph-san { height: 25vw; }
+      .hero-glyph-fen { height: 28vw; }
+      .diff-title {
+        left: 50% !important;
+        transform: translateX(-50%);
+        width: 90% !important;
+        font-size: 52px !important;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Scroll container of 320vh -->
+  <main class="experience">
+    <div class="viewport">
+      <!-- 1. Background scene & parallax -->
+      <div class="scene">
+        <img class="landscape" id="landscape-img" src="background.jpg" alt="Starry Sky Sea Landscape">
+        <div class="scene-vignette"></div>
+        <div class="ambient-glow"></div>
+
+        <!-- Loading placeholder: looping moon footage, screen-blended
+             directly against the background here (NOT inside .stage,
+             which has its own transform and therefore its own stacking
+             context — mix-blend-mode can't see across that boundary; it
+             would just render as an opaque black box). Shown while the
+             real 3D model loads, then faded out and removed. -->
+        <video class="moon-loading-video" id="moon-loading-video" src="moon-loading.mp4" autoplay muted loop playsinline></video>
+      </div>
+
+      <div class="load-status-text" id="load-status-text">乘風弄月影，須臾為君現...</div>
+
+      <!-- Ambient background audio: the source video's own soundtrack,
+           re-cut into a seamless loop (crossfaded seam, no click/gap),
+           playing continuously for the whole page, not just the loading
+           screen. Browsers block un-muted autoplay without a user gesture,
+           so this also arms a one-time fallback to start it on first
+           interaction if the initial play() attempt is blocked. -->
+      <audio id="ambient-audio" src="moon-ambient-loop.mp3" loop preload="auto"></audio>
+
+      <!-- 2. Header UI -->
+      <nav class="scene-nav" id="scene-nav">
+        <!-- Brand Text: 天時。地利。人和 -->
+        <div class="brand-text">天時。地利。人和</div>
+      </nav>
+
+      <!-- 3. Stage Container (1726 x 1195) -->
+      <div class="stage" id="stage">
+        <!-- Soft halo tracking the moon -->
+        <div class="moon-glow" id="moon-glow"></div>
+
+        <!-- Three.js Canvas -->
+        <canvas id="cookie-canvas"></canvas>
+
+        <!-- Hero Title -->
+        <h1 class="title-container hero-title" id="hero-title">
+          <span class="split-char"><img class="hero-glyph hero-glyph-san" src="san-gold.png" alt="三"></span>
+          <span class="split-char"><img class="hero-glyph hero-glyph-fen" src="fen-gold.png" alt="分"></span>
+        </h1>
+
+        <!-- Section 2 Title -->
+        <h2 class="title-container diff-title" id="diff-title" onclick="enterSanfen()" title="點擊進入三分 ‧ 你的解籤日記">你的解籤日記</h2>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Fade veil for the handoff to 三分拷貝.html -->
+  <div class="page-exit-veil" id="page-exit-veil"></div>
+
+  <!-- 三分's app loads INSIDE this iframe rather than via a real page
+       navigation. A window.location navigation would tear down this whole
+       document — including #ambient-audio — and 三分拷貝.html would have to
+       start its own audio fresh, producing an audible cut/restart. Keeping
+       this document (and its <audio>) alive and just swapping in an iframe
+       on top of it means the music never stops at all across the handoff. -->
+  <iframe id="sanfen-frame" title="三分 ‧ 你的解籤日記" src="about:blank"></iframe>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // Moon base diameter (design px) is 532 * MOON_SIZE_MULT
+    const MOON_SIZE_MULT = 2.0;
+
+    // --- 1. Easing helpers ---
+      function clamp(val, min = 0, max = 1) {
+        return Math.max(min, Math.min(max, val));
+      }
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+      function easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+      function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+      function easeOutBack(t) {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+      }
+
+      // --- 2. DOM Split-text setup ---
+      function splitTextToSpans(element) {
+        const text = element.textContent.trim();
+        element.innerHTML = '';
+        const spans = [];
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i];
+          const span = document.createElement('span');
+          span.className = 'split-char';
+          if (char === ' ') {
+            span.innerHTML = '&nbsp;';
+          } else {
+            span.textContent = char;
+          }
+          element.appendChild(span);
+          spans.push(span);
+        }
+        return spans;
+      }
+
+      const heroTitleEl = document.getElementById('hero-title');
+      const diffTitleEl = document.getElementById('diff-title');
+      // Hero title is now two pre-built <img> glyphs (gold "三" / "分"),
+      // not text to split — just grab the existing per-character spans so
+      // the same per-index animation below keeps working unchanged.
+      const heroSpans = Array.from(heroTitleEl.querySelectorAll('.split-char'));
+      const diffSpans = splitTextToSpans(diffTitleEl);
+
+      // --- 3. Stage & Layout calculations ---
+      const stageEl = document.getElementById('stage');
+      const sceneNavEl = document.getElementById('scene-nav');
+      const landscapeImg = document.getElementById('landscape-img');
+      const moonGlowEl = document.getElementById('moon-glow');
+      const moonLoadingVideoEl = document.getElementById('moon-loading-video');
+      const loadStatusEl = document.getElementById('load-status-text');
+      const ambientAudioEl = document.getElementById('ambient-audio');
+
+      // Try to start the ambient loop right away; if the browser's autoplay
+      // policy blocks unmuted audio (no user gesture yet), fall back to
+      // starting it on the very first interaction, then stop listening.
+      function startAmbientAudio() {
+        const p = ambientAudioEl.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      }
+      startAmbientAudio();
+      ['pointerdown', 'keydown', 'touchstart'].forEach((evt) => {
+        window.addEventListener(evt, function onFirstInteraction() {
+          if (ambientAudioEl.paused) startAmbientAudio();
+          ['pointerdown', 'keydown', 'touchstart'].forEach((e2) => window.removeEventListener(e2, onFirstInteraction));
+        }, { once: true });
+      });
+
+      let layoutState = {
+        w: window.innerWidth,
+        h: window.innerHeight,
+        scale: 1,
+        headerScale: 1,
+        isTablet: false,
+        isMobile: false,
+        heroY: 0,
+        sectionY: 0,
+        heroScale: 1,
+        sectionScale: 1,
+        bgHeight: 1280
+      };
+
+      function updateLayout() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const isTablet = w <= 1060;
+        const isMobile = w <= 620;
+
+        let scale = isMobile ? Math.max(w / 1726, h / 1195) : Math.min(w / 1726, h / 1195);
+        let headerScale = isTablet ? clamp(w / 900, 0.82, 1) : Math.min(1, w / 1726);
+
+        document.documentElement.style.setProperty('--desktop-scale', scale);
+        document.documentElement.style.setProperty('--header-scale', headerScale);
+
+        // Calculate cookie positions in design stage coordinates
+        const targetDiameter = 532; // base diameter
+        let heroScale = 1;
+        let sectionScale = 1;
+
+        if (isMobile) {
+          const heroD = clamp(w * 0.72, 250, 310);
+          const secD = clamp(w * 0.67, 235, 300);
+          heroScale = heroD / targetDiameter;
+          sectionScale = secD / targetDiameter;
+        } else {
+          // Tablet and desktop share one fixed ratio instead of each
+          // recomputing their own — the single --desktop-scale factor above
+          // already handles all the resizing, so the moon's proportion
+          // relative to the titles never changes as the window is resized.
+          // 0.68 is also a hard ceiling, not a stylistic pick: with
+          // MOON_SIZE_MULT = 2, heroTextBottom (430) + heroGap (20) +
+          // the moon's full design-space diameter must stay within the
+          // 1195-tall stage, which caps heroScale at 1195-450 = 745,
+          // i.e. heroScale <= 745/1064 ≈ 0.70 — go higher (e.g. the old
+          // fixed 1.0) and the moon's bottom is pushed past the canvas
+          // edge and gets clipped there, which is exactly the "window
+          // enlarged -> moon cut in half" bug this replaces.
+          heroScale = 0.68;
+          sectionScale = 0.68;
+        }
+
+        // Hug the moon against the bottom of "三分" in the hero state, and
+        // against the top of "你的解籤日記" in the section state
+        // (design-space px, matching the actual .hero-title / .diff-title
+        // rendered boxes) — applied the same way at every breakpoint.
+        // heroTextBottom: the hero-title box (top:130, height:320) centers
+        // its tallest glyph (the 280px-tall "分") via flexbox, so its
+        // bottom edge sits at 130 + (320 + 280) / 2 = 430.
+        const heroTextBottom = 430;
+        const diffTextTop = 1020;
+        const heroGap = 20;
+        const sectionGap = 20;
+        const heroRadius = (532 * MOON_SIZE_MULT * heroScale) / 2;
+        const sectionRadius = (532 * MOON_SIZE_MULT * sectionScale * 0.96) / 2;
+        const heroY = (heroTextBottom + heroGap + heroRadius) - 1195 / 2;
+        const sectionY = (diffTextTop - sectionGap - sectionRadius) - 1195 / 2;
+
+        const secCookieRadius = (532 * sectionScale * 0.96) / 2;
+        document.documentElement.style.setProperty('--section-cookie-radius', `${secCookieRadius}px`);
+
+        layoutState = {
+          w, h, scale, headerScale, isTablet, isMobile,
+          heroY, sectionY, heroScale, sectionScale,
+          bgHeight: landscapeImg.clientHeight || 1280
+        };
+
+        // Loading placeholder sits dead-center in the viewport while
+        // waiting — it deliberately does NOT match the real 3D moon's hero
+        // (pre-scroll) position/size; once revealed, the title flies in and
+        // the real moon settles into its own hero spot below it, which is a
+        // normal splash -> content handoff, not a bug.
+        // moon-loading.mp4's frame is 1000x1000 (the moon+rings were cropped
+        // tighter once, at 720x720, and that cut the rings off on both
+        // sides — 1000 is the width that keeps them fully in frame), vs the
+        // 720 the size below was originally calibrated against, so the
+        // container is scaled up by 1000/720 to keep the same apparent
+        // moon size instead of shrinking it.
+        const LOADING_FRAME_COMPENSATION = 1000 / 720;
+        const loadingSizeDesign = 532 * MOON_SIZE_MULT * heroScale * LOADING_FRAME_COMPENSATION;
+        // Capped to a fraction of the viewport's smaller dimension — without
+        // this, loadingSizeDesign (~1005 design px, nearly the full 1195-tall
+        // stage) routinely came out taller than the actual window, leaving no
+        // room for the text below it no matter how the group is centered.
+        // That was the real cause of "text still too far down": the moon
+        // itself didn't fit on screen, not the centering math.
+        const loadingSize = Math.min(loadingSizeDesign * scale, Math.min(w, h) * 0.46);
+
+        // The moon and the status text are centered together as one block
+        // (not the moon alone, with text tacked on below it) — otherwise a
+        // large moon centered by itself leaves the text stranded near the
+        // bottom edge.
+        const STATUS_GAP = 14;
+        const STATUS_BLOCK_HEIGHT = 26;
+        const groupHeight = loadingSize + STATUS_GAP + STATUS_BLOCK_HEIGHT;
+        const groupTop = Math.max(20, h / 2 - groupHeight / 2);
+        const loadingCenterX = w / 2;
+
+        moonLoadingVideoEl.style.width = `${loadingSize}px`;
+        moonLoadingVideoEl.style.height = `${loadingSize}px`;
+        moonLoadingVideoEl.style.left = `${loadingCenterX - loadingSize / 2}px`;
+        moonLoadingVideoEl.style.top = `${groupTop}px`;
+
+        loadStatusEl.style.top = `${groupTop + loadingSize + STATUS_GAP}px`;
+      }
+
+      window.addEventListener('resize', updateLayout);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateLayout);
+      }
+      updateLayout();
+
+      // Reveal the scene immediately — titles and background no longer wait
+      // on the (potentially slow) 3D model load. Only the moon itself is
+      // covered by the loading placeholder until the model is ready.
+      stageEl.classList.add('is-ready');
+      sceneNavEl.classList.add('is-ready');
+      requestAnimationFrame(() => {
+        moonLoadingVideoEl.classList.add('is-visible');
+        loadStatusEl.classList.add('is-visible');
+      });
+
+      // Scrolling is locked until the loading placeholder actually finishes
+      // (see revealModelIfReady / the give-up fallback below) — CSS
+      // overflow:hidden handles most cases, but some mobile browsers still
+      // allow rubber-band overscroll through it, so wheel/touch/keyboard
+      // scroll input is also blocked directly while locked.
+      let scrollLocked = true;
+      document.documentElement.classList.add('scroll-locked');
+      const SCROLL_KEYS = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
+      function blockScrollWheel(e) { if (scrollLocked) e.preventDefault(); }
+      function blockScrollTouch(e) { if (scrollLocked) e.preventDefault(); }
+      function blockScrollKeys(e) { if (scrollLocked && SCROLL_KEYS.includes(e.key)) e.preventDefault(); }
+      window.addEventListener('wheel', blockScrollWheel, { passive: false });
+      window.addEventListener('touchmove', blockScrollTouch, { passive: false });
+      window.addEventListener('keydown', blockScrollKeys, { passive: false });
+      function unlockScroll() {
+        scrollLocked = false;
+        document.documentElement.classList.remove('scroll-locked');
+      }
+
+      // --- 4. Mouse Interactive Parallax Tracking ---
+      let mouseX = 0;
+      let mouseY = 0;
+      let smoothMouseX = 0;
+      let smoothMouseY = 0;
+
+      window.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+        mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+      });
+
+      // --- 5. Three.js Setup ---
+      const canvas = document.getElementById('cookie-canvas');
+      const scene = new THREE.Scene();
+
+      const camera = new THREE.OrthographicCamera(-863, 863, 597.5, -597.5, 0.1, 4000);
+      camera.position.z = 2000;
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: 'high-performance'
+      });
+      renderer.setSize(1726, 1195, false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.setClearColor(0x000000, 0);
+
+      // Lighting — animated across the scroll transition so the moon
+      // sweeps from a mostly-dark thin crescent (hero) to a fully lit
+      // bright moon (section), like a real moon-phase change.
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x704019, 0.9);
+      scene.add(hemiLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.25);
+      keyLight.position.set(-450, 650, 1200);
+      scene.add(keyLight);
+
+      const rimLight = new THREE.DirectionalLight(0xffb56b, 0.45);
+      rimLight.position.set(600, -100, 500);
+      scene.add(rimLight);
+
+      const fillLight = new THREE.DirectionalLight(0x73b0c2, 0.35);
+      fillLight.position.set(0, -500, 800);
+      scene.add(fillLight);
+
+      const LIGHT_PHASE = {
+        start: {
+          hemi: 0.12,
+          keyIntensity: 1.5,
+          keyPos: new THREE.Vector3(1450, 300, -380),
+          rimIntensity: 0.7,
+          fillIntensity: 0.04
+        },
+        end: {
+          hemi: 0.9,
+          keyIntensity: 1.25,
+          keyPos: new THREE.Vector3(450, 650, 1200),
+          rimIntensity: 0.45,
+          fillIntensity: 0.35
+        }
+      };
+
+      // Groups
+      const cookieGroup = new THREE.Group();
+      const innerGroup = new THREE.Group();
+      cookieGroup.add(innerGroup);
+      scene.add(cookieGroup);
+
+      // Fades out and discards the loading placeholder (video + status text),
+      // once the real 3D model is ready to take over, or has definitively failed.
+      function hideLoadingPlaceholder() {
+        moonLoadingVideoEl.classList.remove('is-visible');
+        loadStatusEl.classList.remove('is-visible');
+        setTimeout(() => {
+          moonLoadingVideoEl.remove();
+          loadStatusEl.remove();
+        }, 950);
+      }
+
+      // "三分" only flies in once the real 3D model is ready — during the
+      // loading wait, the screen shows just the placeholder video + status
+      // text, nothing else. Both timers start together once the handoff
+      // in revealModel() actually happens.
+      let titleIntroStartTime = null;
+      let moonIntroStartTime = null;
+
+      // The loading video must play through at least one full dark->light
+      // pass before we cut over to the real moon — otherwise, on a fast
+      // connection, the model can finish loading in well under a second
+      // and the placeholder gets swapped out while the moon is still
+      // mostly dark. moon-loading.mp4 is a ping-pong loop (forward =
+      // dark->light, then reverse = light->dark); FIRST_PHASE_SECONDS is
+      // the duration of just the forward half.
+      const FIRST_PHASE_SECONDS = 10;
+      let modelReady = false;
+      let firstPhaseWatched = false;
+      let pendingModel = null;
+
+      function revealModelIfReady() {
+        if (!modelReady || !firstPhaseWatched || !pendingModel) return;
+        const { model, baseScale } = pendingModel;
+        innerGroup.scale.set(baseScale, baseScale, baseScale);
+        innerGroup.add(model);
+        hideLoadingPlaceholder();
+        moonIntroStartTime = performance.now();
+        titleIntroStartTime = performance.now();
+        unlockScroll();
+      }
+
+      moonLoadingVideoEl.addEventListener('timeupdate', () => {
+        if (!firstPhaseWatched && moonLoadingVideoEl.currentTime >= FIRST_PHASE_SECONDS) {
+          firstPhaseWatched = true;
+          revealModelIfReady();
+        }
+      });
+
+      // Async GLB model loader
+      const loader = new GLTFLoader();
+
+      function applyGltfModel(gltf) {
+        const model = gltf.scene;
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+
+        model.position.sub(center);
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const baseScale = (532 * MOON_SIZE_MULT) / (maxDim || 1);
+
+        model.traverse((child) => {
+          if (child.isMesh && child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach((mat) => {
+              mat.metalness = 0;
+              mat.roughness = Math.max(0.72, mat.roughness !== undefined ? mat.roughness : 0.8);
+              if (mat.map) {
+                mat.map.colorSpace = THREE.SRGBColorSpace;
+                mat.map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+                mat.map.needsUpdate = true;
+              }
+              mat.needsUpdate = true;
+            });
+          }
+        });
+
+        // Don't add the model to the scene yet — it would start rendering
+        // immediately at its (small, non-zero) pre-intro scale, showing up
+        // as a stray extra moon next to the loading video. It only actually
+        // joins the scene once revealModelIfReady() decides to reveal it.
+        pendingModel = { model, baseScale };
+        modelReady = true;
+        revealModelIfReady();
+      }
+
+      // Load original model
+      loader.load(
+        'Hi3D-moon.glb',
+        applyGltfModel,
+        undefined,
+        function (err) {
+          console.warn('Direct load failed, trying CDN fallback...', err);
+          loader.load(
+            'https://jnyang6270-art.github.io/moon/Hi3D-moon.glb',
+            applyGltfModel,
+            undefined,
+            function (fallbackErr) {
+              console.error('CDN fallback also failed, revealing page without the moon.', fallbackErr);
+              hideLoadingPlaceholder();
+              titleIntroStartTime = performance.now();
+              unlockScroll();
+            }
+          );
+        }
+      );
+
+      // --- 6. Scroll Tracking & Smooth Interpolation ---
+      let targetScroll = 0;
+      let smoothScroll = 0;
+
+      window.addEventListener('scroll', function () {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        targetScroll = maxScroll > 0 ? clamp(window.scrollY / maxScroll, 0, 1) : 0;
+      }, { passive: true });
+
+      // --- 7. Master Animation & Render Loop ---
+      let lastTime = performance.now();
+      let animFrameId = null;
+
+      function tick(now) {
+        const dt = clamp(now - lastTime, 0, 64);
+        lastTime = now;
+
+        // Smooth scroll decay
+        const scrollFactor = 1 - Math.exp(-dt / 180);
+        smoothScroll += (targetScroll - smoothScroll) * scrollFactor;
+        if (Math.abs(targetScroll - smoothScroll) < 0.00008) {
+          smoothScroll = targetScroll;
+        }
+
+        // Smooth mouse tracking
+        smoothMouseX += (mouseX - smoothMouseX) * 0.08;
+        smoothMouseY += (mouseY - smoothMouseY) * 0.08;
+
+        // Section transition: scroll 8% -> 80%
+        const rawTrans = clamp((smoothScroll - 0.08) / 0.72);
+        const transition = easeInOutCubic(rawTrans);
+
+        // Moon phase lighting: a continuous, ambient dark<->bright pulse
+        // driven purely by time, not by scroll position. It plays at the
+        // exact same amplitude and pace whether you're at the very top
+        // or the very bottom of the page — scrolling never "finishes" or
+        // locks it in. (Any scroll-position-based version inevitably
+        // reaches its bright end state and holds there once you reach
+        // the bottom, which is the "variation disappears" problem.)
+        const PHASE_PERIOD_MS = 12000;
+        const phaseCycle = (1 - Math.cos(now * (2 * Math.PI / PHASE_PERIOD_MS))) / 2;
+        const lightProgress = phaseCycle;
+        hemiLight.intensity = lerp(LIGHT_PHASE.start.hemi, LIGHT_PHASE.end.hemi, lightProgress);
+        keyLight.intensity = lerp(LIGHT_PHASE.start.keyIntensity, LIGHT_PHASE.end.keyIntensity, lightProgress);
+        keyLight.position.lerpVectors(LIGHT_PHASE.start.keyPos, LIGHT_PHASE.end.keyPos, lightProgress);
+        rimLight.intensity = lerp(LIGHT_PHASE.start.rimIntensity, LIGHT_PHASE.end.rimIntensity, lightProgress);
+        fillLight.intensity = lerp(LIGHT_PHASE.start.fillIntensity, LIGHT_PHASE.end.fillIntensity, lightProgress);
+
+        // A. Background Parallax: read the image's actual rendered height
+        // (not an aspect-ratio estimate) so the sea is always fully
+        // reached at the bottom, on every viewport shape.
+        const renderedHeight = landscapeImg.getBoundingClientRect().height || window.innerHeight;
+        const maxShift = Math.max(0, renderedHeight - window.innerHeight);
+
+        const currentBgY = -maxShift * smoothScroll + smoothMouseY * 12;
+        const currentBgX = smoothMouseX * -15;
+        landscapeImg.style.transform = `translate3d(calc(-50% + ${currentBgX}px), ${currentBgY}px, 0)`;
+
+        // B. Intro timing — both the title and the moon's grow-in only
+        // start once the real 3D model has actually loaded.
+        const titleIntroProgress = titleIntroStartTime === null ? 0 : clamp((now - titleIntroStartTime) / 1350);
+        const moonIntroProgress = moonIntroStartTime === null ? 0 : clamp((now - moonIntroStartTime) / 1350);
+
+        // Continuous ambient floating wave
+        const idleFloat = Math.sin(now * 0.002) * 14;
+        const idleRotate = now * 0.0004;
+
+        // C. Hero Title Letter Animations
+        const nHero = heroSpans.length;
+        heroSpans.forEach((span, i) => {
+          const dir = i % 2 === 0 ? -1 : 1;
+
+          // Enter animation (intro)
+          const enterP = easeOutCubic(clamp((titleIntroProgress - i * 0.024) / 0.63));
+          const initX = (1 - enterP) * (dir * 52 + 80);
+          const initY = (1 - enterP) * -310;
+          const initRotX = (1 - enterP) * 74;
+          const initRotZ = (1 - enterP) * dir * 9;
+          let opacity = enterP;
+
+          // Leave animation (scroll scatter)
+          const leaveP = easeInOutCubic(clamp((smoothScroll - 0.08 - i * 0.019) / 0.29));
+          const scatterX = leaveP * ((i - (nHero - 1) / 2) * 39 + dir * 28);
+          const scatterY = -430 * Math.pow(leaveP, 1.8);
+          const scatterRotX = -leaveP * 24;
+          const scatterRotZ = leaveP * dir * (17 + i * 1.7);
+
+          const fadeOut = 1 - clamp((leaveP - 0.58) / 0.42);
+          opacity *= fadeOut;
+
+          // Mouse reactive parallax on titles
+          const mouseTiltX = smoothMouseX * (i - nHero / 2) * 1.2;
+          const mouseTiltY = smoothMouseY * 6;
+
+          const finalX = initX + scatterX + mouseTiltX;
+          const finalY = initY + scatterY + mouseTiltY;
+          const finalRotX = initRotX + scatterRotX + smoothMouseY * -8;
+          const finalRotZ = initRotZ + scatterRotZ + smoothMouseX * 4;
+
+          span.style.transform = `translate3d(${finalX}px, ${finalY}px, 0) rotateX(${finalRotX}deg) rotateZ(${finalRotZ}deg)`;
+          span.style.opacity = opacity;
+        });
+
+        // D. "The Difference" Title Letter Animations
+        const nDiff = diffSpans.length;
+        diffSpans.forEach((span, i) => {
+          const enterP = easeOutBack(clamp((smoothScroll - 0.27 - i * 0.006) / 0.22));
+          const startY = (1 - enterP) * 250;
+          const startX = (1 - enterP) * ((i - nDiff / 2) * 9);
+          const rotX = (1 - enterP) * -66;
+          const rotZ = (i % 2 === 0 ? -1 : 1) * 5 * (1 - enterP);
+
+          const opacity = clamp((smoothScroll - 0.27 - i * 0.005) / 0.13);
+
+          span.style.transform = `translate3d(${startX}px, ${startY}px, 0) rotateX(${rotX}deg) rotateZ(${rotZ}deg)`;
+          span.style.opacity = opacity;
+        });
+
+        // E. Cookie / Moon 3D Transformation & Dynamic Motion
+        const cookieIntro = easeOutBack(clamp((moonIntroProgress - 0.22) / 0.72));
+
+        // Position
+        const targetHeroX = 0;
+        const targetHeroY = layoutState.heroY;
+        const curHeroX = lerp(155, targetHeroX, cookieIntro);
+        const curHeroY = lerp(430, targetHeroY, cookieIntro);
+
+        let finalCookieY = lerp(curHeroY, layoutState.sectionY, transition) + Math.sin(transition * Math.PI) * 9 + idleFloat;
+        let finalCookieX = curHeroX + Math.sin(transition * Math.PI) * -20 + smoothMouseX * 18;
+
+        // Scale
+        const curHeroScale = lerp(0.18, layoutState.heroScale, cookieIntro);
+        const finalCookieScale = lerp(curHeroScale, layoutState.sectionScale * 0.96, transition);
+
+        cookieGroup.position.set(finalCookieX, -finalCookieY, 0);
+        cookieGroup.scale.set(finalCookieScale, finalCookieScale, finalCookieScale);
+
+        // Halo tracks the moon's on-screen position (design-space: camera
+        // bounds ±863/±597.5 map to the 1726x1195 stage) and brightens as
+        // the moon phase reaches fully lit.
+        const glowSize = 700 * finalCookieScale;
+        const glowDesignX = 863 + finalCookieX - glowSize / 2;
+        const glowDesignY = 597.5 + finalCookieY - glowSize / 2;
+        moonGlowEl.style.width = `${glowSize}px`;
+        moonGlowEl.style.height = `${glowSize}px`;
+        moonGlowEl.style.transform = `translate3d(${glowDesignX}px, ${glowDesignY}px, 0)`;
+        moonGlowEl.style.opacity = lightProgress * 0.85;
+
+        // Dynamic 3D Rotation: Scroll Flip + Continuous Idle Spin + Mouse Tilt
+        cookieGroup.rotation.y = transition * Math.PI + idleRotate + smoothMouseX * 0.35;
+        cookieGroup.rotation.z = lerp(-0.09, 0.19, transition) + Math.sin(now * 0.0015) * 0.03;
+        cookieGroup.rotation.x = Math.sin(now * 0.001) * 0.06 + smoothMouseY * -0.3;
+
+        // Render Three.js scene
+        renderer.render(scene, camera);
+
+        animFrameId = requestAnimationFrame(tick);
+      }
+
+      animFrameId = requestAnimationFrame(tick);
+
+      window.addEventListener('pagehide', () => {
+        if (animFrameId) cancelAnimationFrame(animFrameId);
+      });
+
+      // --- 8. Handoff into the 三分 app (三分拷貝.html, same folder) ---
+      // Exposed on window since it's invoked from the diff-title's inline
+      // onclick, which runs outside this module's scope.
+      let leavingPage = false;
+      window.enterSanfen = function enterSanfen() {
+        if (leavingPage) return;
+        leavingPage = true;
+        diffTitleEl.classList.add('is-burst');
+
+        const veil = document.getElementById('page-exit-veil');
+        const frame = document.getElementById('sanfen-frame');
+
+        // Register before setting src — the load can fire as soon as the
+        // src assignment below runs.
+        frame.addEventListener('load', function onFrameLoad() {
+          frame.removeEventListener('load', onFrameLoad);
+          if (frame.src === 'about:blank' || frame.src === '') return;
+          frame.classList.add('is-active');
+          setTimeout(() => veil.classList.remove('is-active'), 250);
+          // Sync the mute button's starting icon with the actual audio
+          // state (postMessage, not a direct call, so this still works
+          // even if the browser treats the iframe as a different origin —
+          // e.g. two sibling file:// documents).
+          if (frame.contentWindow) {
+            frame.contentWindow.postMessage({ type: 'sanfen:muteState', muted: !!(ambientAudioEl && ambientAudioEl.muted) }, '*');
+          }
+        });
+
+        setTimeout(() => veil.classList.add('is-active'), 200);
+        setTimeout(() => {
+          // Load 三分拷貝.html into the iframe instead of navigating this
+          // whole document away. #ambient-audio lives here and is never
+          // touched by this — it just keeps playing underneath, exactly
+          // where it already was, with no restart.
+          frame.src = '三分拷貝.html';
+        }, 820);
+      };
+
+      // The ambient track keeps playing straight through login and into
+      // the main app, so the mute button in that app's header (running
+      // inside #sanfen-frame) remote-controls this same element rather
+      // than owning a copy of its own. This listens via postMessage —
+      // not a direct window.parent.<fn>() call from the child — because
+      // that call can silently throw (and get swallowed) when the browser
+      // treats the two sibling documents as different origins, e.g. two
+      // file:// documents opened without a server; postMessage works
+      // regardless.
+      window.addEventListener('message', (event) => {
+        if (!event.data || event.data.type !== 'sanfen:toggleMute' || !ambientAudioEl) return;
+        ambientAudioEl.muted = !ambientAudioEl.muted;
+        if (event.source) {
+          event.source.postMessage({ type: 'sanfen:muteState', muted: ambientAudioEl.muted }, '*');
+        }
+      });
+  </script>
+</body>
+</html>
