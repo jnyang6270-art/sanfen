@@ -92,6 +92,27 @@
     to { transform: scale(1); }
   }
 </style>
+
+  <!-- Security Shield & Source Protection -->
+  <script>
+  (function(){
+    document.addEventListener('contextmenu',function(e){e.preventDefault();return false;},{capture:true});
+    document.addEventListener('keydown',function(e){
+      if(e.keyCode===123) { e.preventDefault(); return false; }
+      if((e.ctrlKey||e.metaKey)&&e.shiftKey&&(e.keyCode===73||e.keyCode===74||e.keyCode===67||e.key==='I'||e.key==='J'||e.key==='C')){ e.preventDefault(); return false; }
+      if(e.metaKey&&e.altKey&&(e.keyCode===73||e.keyCode===74||e.keyCode===67||e.key==='i'||e.key==='j'||e.key==='c')){ e.preventDefault(); return false; }
+      if((e.ctrlKey||(e.metaKey&&e.altKey))&&(e.keyCode===85||e.key==='u'||e.key==='U')){ e.preventDefault(); return false; }
+      if((e.ctrlKey||e.metaKey)&&(e.keyCode===83||e.key==='s'||e.key==='S')){ e.preventDefault(); return false; }
+    },{capture:true});
+    document.addEventListener('dragstart',function(e){e.preventDefault();},{capture:true});
+    setInterval(function(){
+      var t=performance.now();
+      debugger;
+      if(performance.now()-t>100){ try{console.clear();}catch(e){} }
+    },1200);
+  })();
+  </script>
+
 </head>
 <body>
 <div id="root"></div>
