@@ -488,7 +488,7 @@ function App() {
       try {
         const prompt = `你是一位溫暖、有智慧的解籤命理師，擅長用親切、鼓勵人心的語氣為求籤者解讀籤詩。\n\n籤詩系統：${payload.systemName}\n籤號：${payload.stickNum}（${payload.ganzhi}）\n詩曰：${payload.poem}\n典故：${payload.story}\n聖意：${payload.meaning}\n\n求籤者想請示的事項：「${payload.question}」\n\n請針對求籤者的問題，結合籤詩詩意與典故，給予一段約150-250字、溫馨具體、繁體中文的解籤建議。語氣要溫暖、正向、有智慧，避免空泛，盡量結合籤詩內容給出具體建議。不要用條列式，用自然流暢的段落文字。直接輸出最終的解籤內容本身，不要輸出任何思考過程、字數統計、條件確認或任何非解籤內容的文字。`;
 
-        const gKey = atob("QVEuQWI4Uk42TElyRjQwbUstVHdodTViZGhrUUpCcFZoaTVXRHZWWilfZjlUVmJ0THBvQQ==");
+        const gKey = atob("QVEuQWI4Uk42TElyRjQwbUstVHdodTViZGhrUUpCcFZoaTVXRHZWWjJEX2Y5VFZidExwb0E=");
         const geminiResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${gKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

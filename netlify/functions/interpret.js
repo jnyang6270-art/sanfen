@@ -1,4 +1,4 @@
-const defaultKeyEncoded = "QVEuQWI4Uk42TElyRjQwbUstVHdodTViZGhrUUpCcFZoaTVXRHZWWilfZjlUVmJ0THBvQQ==";
+const defaultKeyEncoded = "QVEuQWI4Uk42TElyRjQwbUstVHdodTViZGhrUUpCcFZoaTVXRHZWWjJEX2Y5VFZidExwb0E=";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || Buffer.from(defaultKeyEncoded, "base64").toString("utf-8");
 const MODEL = "gemini-3.6-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
