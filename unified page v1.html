@@ -1147,11 +1147,8 @@
 
         setTimeout(() => veil.classList.add('is-active'), 200);
         setTimeout(() => {
-          // Load 三分拷貝.html into the iframe instead of navigating this
-          // whole document away. #ambient-audio lives here and is never
-          // touched by this — it just keeps playing underneath, exactly
-          // where it already was, with no restart.
-          frame.src = '三分拷貝.html';
+          // Load 三分拷貝.html into the iframe with cache-buster timestamp
+          frame.src = '三分拷貝.html?v=' + Date.now();
         }, 820);
       };
 
